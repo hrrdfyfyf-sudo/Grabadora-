@@ -1,7 +1,8 @@
 {
   "appId": "com.tu.grabadora",
   "appName": "Grabadora",
-  "webDir": "www"
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true
+  }
 }
-  
-  
