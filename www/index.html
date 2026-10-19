@@ -14,7 +14,7 @@
   #rec { background:#e74c3c; color:#fff; }
   #stop { background:#555; color:#fff; }
   #stop:disabled { opacity:0.4; }
-  #status { font-size:14px; color:#aaa; }
+  #status { font-size:14px; color:#aaa; text-align:center; padding: 0 20px;}
   #lista { width:90%; max-height:40vh; overflow-y:auto; }
   .audio-item { background:#2a2a2a; padding:10px; margin:8px 0;
                 border-radius:10px; display:flex; flex-direction:column; gap:6px; }
@@ -23,7 +23,7 @@
 </head>
 <body>
   <h1>🎙️ Grabadora</h1>
-  <span id="status">Listo para grabar</span>
+  <span id="status">Presiona Grabar para empezar</span>
   <button id="rec">● Grabar</button>
   <button id="stop" disabled>■ Parar</button>
   <div id="lista"></div>
@@ -37,7 +37,10 @@ const lista = document.getElementById('lista');
 
 recBtn.onclick = async () => {
   try {
+    status.textContent = 'Pidiendo permiso...';
+    // Esto es lo que activa la ventana de permiso en Android
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    
     mediaRecorder = new MediaRecorder(stream);
     chunks = []; segundos = 0;
     mediaRecorder.ondataavailable = e => chunks.push(e.data);
@@ -59,7 +62,8 @@ recBtn.onclick = async () => {
       status.textContent = `Grabando... ${segundos}s`;
     }, 1000);
   } catch (err) {
-    status.textContent = 'Error: ' + err.message;
+    status.textContent = 'Error: Necesitas dar permiso de micrófono en los ajustes.';
+    console.error(err);
   }
 };
 
