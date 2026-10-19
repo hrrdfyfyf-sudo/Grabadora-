@@ -29,6 +29,10 @@ jobs:
       - name: Añadir plataforma Android
         run: npx cap add android
 
+      - name: Inyectar Permiso de Micrófono
+        run: |
+          sed -i 's|</manifest>|<uses-permission android:name="android.permission.RECORD_AUDIO" />\n</manifest>|' android/app/src/main/AndroidManifest.xml
+
       - name: Sincronizar código web
         run: npx cap sync android
 
