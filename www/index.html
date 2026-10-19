@@ -10,7 +10,7 @@
          justify-content:center; height:100vh; margin:0; gap:20px; }
   h1 { font-size:22px; }
   button { padding:15px 40px; font-size:18px; border:none;
-           border-radius:50px; cursor:pointer; }
+           border-radius:50px; cursor:pointer; text-decoration:none; }
   #rec { background:#e74c3c; color:#fff; }
   #stop { background:#555; color:#fff; }
   #stop:disabled { opacity:0.4; }
@@ -27,7 +27,7 @@
   <span id="status">Presiona Grabar para empezar</span>
   <button id="rec">● Grabar</button>
   <button id="stop" disabled>■ Parar</button>
-  <button id="settingsBtn">⚙️ Abrir Ajustes de Permisos</button>
+  <button id="settingsBtn">⚙️ Abrir Ajustes de la App</button>
   <div id="lista"></div>
 
 <script>
@@ -41,6 +41,7 @@ const settingsBtn = document.getElementById('settingsBtn');
 recBtn.onclick = async () => {
   try {
     status.textContent = 'Pidiendo permiso...';
+    // Intentar acceder al micrófono
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     
     mediaRecorder = new MediaRecorder(stream);
@@ -65,8 +66,8 @@ recBtn.onclick = async () => {
       status.textContent = `Grabando... ${segundos}s`;
     }, 1000);
   } catch (err) {
-    status.textContent = 'Error de Micrófono. Actívalo en los Ajustes de Android.';
-    settingsBtn.style.display = 'block'; // Muestra el botón de ajustes
+    status.textContent = 'Error: Permiso denegado. Presiona el botón azul.';
+    settingsBtn.style.display = 'block'; 
     console.error(err);
   }
 };
@@ -78,13 +79,10 @@ stopBtn.onclick = () => {
   recBtn.disabled = false; stopBtn.disabled = true;
 };
 
-// Abre los ajustes de la app
+// Abre los ajustes usando un esquema de URL de Android
 settingsBtn.onclick = () => {
-  if (Capacitor && Capacitor.Plugins && Capacitor.Plugins.App) {
-      Capacitor.Plugins.App.openAppSettings();
-  } else {
-      alert("Busca la app 'Grabadora' en los ajustes de tu celular y activa el micrófono manualmente.");
-  }
+  // Esto intenta abrir la pantalla de detalles de la app en Android
+  window.location.href = "package:com.tu.grabadora"; 
 };
 </script>
 </body>
