@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grabadora</title>
+<style>
+  body { font-family: sans-serif; background:#1a1a1a; color:#fff;
+         display:flex; flex-direction:column; align-items:center;
+         justify-content:center; height:100vh; margin:0; gap:20px; }
+  h1 { font-size:22px; }
+  button { padding:15px 40px; font-size:18px; border:none;
+           border-radius:50px; cursor:pointer; }
+  #rec { background:#e74c3c; color:#fff; }
+  #stop { background:#555; color:#fff; }
+  #stop:disabled { opacity:0.4; }
+  #status { font-size:14px; color:#aaa; }
+  #lista { width:90%; max-height:40vh; overflow-y:auto; }
+  .audio-item { background:#2a2a2a; padding:10px; margin:8px 0;
+                border-radius:10px; display:flex; flex-direction:column; gap:6px; }
+  .audio-item audio { width:100%; }
+</style>
+</head>
+<body>
+  <h1>🎙️ Grabadora</h1>
+  <span id="status">Listo para grabar</span>
+  <button id="rec">● Grabar</button>
+  <button id="stop" disabled>■ Parar</button>
+  <div id="lista"></div>
+
+<script>
+let mediaRecorder, chunks = [], timer, segundos = 0;
+const recBtn = document.getElementById('rec');
+const stopBtn = document.getElementById('stop');
+const status = document.getElementById('status');
+const lista = document.getElementById('lista');
+
+recBtn.onclick = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    chunks = []; segundos = 0;
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'audio/webm' });
+      const url = URL.createObjectURL(blob);
+      const item = document.createElement('div');
+      item.className = 'audio-item';
+      item.innerHTML = `<audio controls src="${url}"></audio>
+        <a href="${url}" download="grabacion_${Date.now()}.webm"
+           style="color:#4da6ff;font-size:13px;">⬇ Descargar</a>`;
+      lista.prepend(item);
+      stream.getTracks().forEach(t => t.stop());
+    };
+    mediaRecorder.start();
+    recBtn.disabled = true; stopBtn.disabled = false;
+    timer = setInterval(() => {
+      segundos++;
+      status.textContent = `Grabando... ${segundos}s`;
+    }, 1000);
+  } catch (err) {
+    status.textContent = 'Error: ' + err.message;
+  }
+};
+
+stopBtn.onclick = () => {
+  mediaRecorder.stop();
+  clearInterval(timer);
+  status.textContent = 'Grabación guardada';
+  recBtn.disabled = false; stopBtn.disabled = true;
+};
+</script>
+</body>
+</html>
