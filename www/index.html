@@ -1,89 +1,186 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Grabadora</title>
-<style>
-  body { font-family: sans-serif; background:#1a1a1a; color:#fff;
-         display:flex; flex-direction:column; align-items:center;
-         justify-content:center; height:100vh; margin:0; gap:20px; }
-  h1 { font-size:22px; }
-  button { padding:15px 40px; font-size:18px; border:none;
-           border-radius:50px; cursor:pointer; text-decoration:none; }
-  #rec { background:#e74c3c; color:#fff; }
-  #stop { background:#555; color:#fff; }
-  #stop:disabled { opacity:0.4; }
-  #status { font-size:14px; color:#aaa; text-align:center; padding: 0 20px;}
-  #settingsBtn { display:none; background:#3498db; color:#fff; font-size:14px; padding:10px 20px; }
-  #lista { width:90%; max-height:40vh; overflow-y:auto; }
-  .audio-item { background:#2a2a2a; padding:10px; margin:8px 0;
-                border-radius:10px; display:flex; flex-direction:column; gap:6px; }
-  .audio-item audio { width:100%; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Grabadora</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #121212;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      gap: 18px;
+      box-sizing: border-box;
+    }
+    h1 {
+      font-size: 24px;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #status {
+      font-size: 15px;
+      color: #aaa;
+      text-align: center;
+      max-width: 320px;
+      line-height: 1.4;
+      min-height: 50px;
+    }
+    button {
+      padding: 16px 48px;
+      font-size: 18px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    #rec {
+      background: #e74c3c;
+      color: #fff;
+    }
+    #stop {
+      background: #444;
+      color: #fff;
+    }
+    #lista {
+      width: 100%;
+      max-width: 400px;
+      max-height: 40vh;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+    .audio-item {
+      background: #1e1e1e;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .audio-item audio {
+      width: 100%;
+    }
+    .audio-item a {
+      color: #4da6ff;
+      font-size: 13px;
+      text-decoration: none;
+    }
+  </style>
 </head>
 <body>
   <h1>🎙️ Grabadora</h1>
-  <span id="status">Presiona Grabar para empezar</span>
+  <div id="status">Presiona Grabar para empezar</div>
+  
   <button id="rec">● Grabar</button>
   <button id="stop" disabled>■ Parar</button>
-  <button id="settingsBtn">⚙️ Abrir Ajustes de la App</button>
+
   <div id="lista"></div>
 
 <script>
-let mediaRecorder, chunks = [], timer, segundos = 0;
-const recBtn = document.getElementById('rec');
-const stopBtn = document.getElementById('stop');
-const status = document.getElementById('status');
-const lista = document.getElementById('lista');
-const settingsBtn = document.getElementById('settingsBtn');
+  let mediaRecorder = null;
+  let chunks = [];
+  let timer = null;
+  let segundos = 0;
+  let stream = null;
 
-recBtn.onclick = async () => {
-  try {
-    status.textContent = 'Pidiendo permiso...';
-    // Intentar acceder al micrófono
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    
-    mediaRecorder = new MediaRecorder(stream);
-    chunks = []; segundos = 0;
-    mediaRecorder.ondataavailable = e => chunks.push(e.data);
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'audio/webm' });
-      const url = URL.createObjectURL(blob);
-      const item = document.createElement('div');
-      item.className = 'audio-item';
-      item.innerHTML = `<audio controls src="${url}"></audio>
-        <a href="${url}" download="grabacion_${Date.now()}.webm"
-           style="color:#4da6ff;font-size:13px;">⬇ Descargar</a>`;
-      lista.prepend(item);
+  const recBtn = document.getElementById('rec');
+  const stopBtn = document.getElementById('stop');
+  const status = document.getElementById('status');
+  const lista = document.getElementById('lista');
+
+  recBtn.onclick = async () => {
+    status.textContent = 'Solicitando permiso de micrófono...';
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
+
+      mediaRecorder = new MediaRecorder(stream);
+      chunks = [];
+      segundos = 0;
+
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+
+        const item = document.createElement('div');
+        item.className = 'audio-item';
+        item.innerHTML = `
+          <audio controls src="${url}"></audio>
+          <a href="\( {url}" download="grabacion_ \){Date.now()}.webm">⬇ Descargar</a>
+        `;
+        lista.prepend(item);
+
+        if (stream) {
+          stream.getTracks().forEach(t => t.stop());
+          stream = null;
+        }
+      };
+
+      mediaRecorder.start(1000);
+      recBtn.disabled = true;
+      stopBtn.disabled = false;
+
+      timer = setInterval(() => {
+        segundos++;
+        status.textContent = `Grabando... ${segundos}s`;
+      }, 1000);
+
+    } catch (err) {
+      console.error(err);
+
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        status.innerHTML = `
+          <b>Permiso denegado</b><br><br>
+          Ve a Ajustes → Aplicaciones → Grabadora → Permisos → Micrófono → Permitir
+        `;
+      } else if (err.name === 'NotFoundError') {
+        status.textContent = 'No se encontró micrófono en el dispositivo.';
+      } else if (err.name === 'NotReadableError') {
+        status.textContent = 'El micrófono está siendo usado por otra app.';
+      } else {
+        status.textContent = `Error: ${err.name} - ${err.message}`;
+      }
+    }
+  };
+
+  stopBtn.onclick = () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+    clearInterval(timer);
+    status.textContent = 'Grabación guardada';
+    recBtn.disabled = false;
+    stopBtn.disabled = true;
+  };
+
+  window.addEventListener('beforeunload', () => {
+    if (stream) {
       stream.getTracks().forEach(t => t.stop());
-    };
-    mediaRecorder.start();
-    recBtn.disabled = true; stopBtn.disabled = false;
-    settingsBtn.style.display = 'none';
-    timer = setInterval(() => {
-      segundos++;
-      status.textContent = `Grabando... ${segundos}s`;
-    }, 1000);
-  } catch (err) {
-    status.textContent = 'Error: Permiso denegado. Presiona el botón azul.';
-    settingsBtn.style.display = 'block'; 
-    console.error(err);
-  }
-};
-
-stopBtn.onclick = () => {
-  mediaRecorder.stop();
-  clearInterval(timer);
-  status.textContent = 'Grabación guardada';
-  recBtn.disabled = false; stopBtn.disabled = true;
-};
-
-// Abre los ajustes usando un esquema de URL de Android
-settingsBtn.onclick = () => {
-  // Esto intenta abrir la pantalla de detalles de la app en Android
-  window.location.href = "package:com.tu.grabadora"; 
-};
+    }
+  });
 </script>
 </body>
 </html>
