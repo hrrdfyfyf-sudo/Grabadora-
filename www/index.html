@@ -15,6 +15,7 @@
   #stop { background:#555; color:#fff; }
   #stop:disabled { opacity:0.4; }
   #status { font-size:14px; color:#aaa; text-align:center; padding: 0 20px;}
+  #settingsBtn { display:none; background:#3498db; color:#fff; font-size:14px; padding:10px 20px; }
   #lista { width:90%; max-height:40vh; overflow-y:auto; }
   .audio-item { background:#2a2a2a; padding:10px; margin:8px 0;
                 border-radius:10px; display:flex; flex-direction:column; gap:6px; }
@@ -26,6 +27,7 @@
   <span id="status">Presiona Grabar para empezar</span>
   <button id="rec">● Grabar</button>
   <button id="stop" disabled>■ Parar</button>
+  <button id="settingsBtn">⚙️ Abrir Ajustes de Permisos</button>
   <div id="lista"></div>
 
 <script>
@@ -34,11 +36,11 @@ const recBtn = document.getElementById('rec');
 const stopBtn = document.getElementById('stop');
 const status = document.getElementById('status');
 const lista = document.getElementById('lista');
+const settingsBtn = document.getElementById('settingsBtn');
 
 recBtn.onclick = async () => {
   try {
     status.textContent = 'Pidiendo permiso...';
-    // Esto es lo que activa la ventana de permiso en Android
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     
     mediaRecorder = new MediaRecorder(stream);
@@ -57,12 +59,14 @@ recBtn.onclick = async () => {
     };
     mediaRecorder.start();
     recBtn.disabled = true; stopBtn.disabled = false;
+    settingsBtn.style.display = 'none';
     timer = setInterval(() => {
       segundos++;
       status.textContent = `Grabando... ${segundos}s`;
     }, 1000);
   } catch (err) {
-    status.textContent = 'Error: Necesitas dar permiso de micrófono en los ajustes.';
+    status.textContent = 'Error de Micrófono. Actívalo en los Ajustes de Android.';
+    settingsBtn.style.display = 'block'; // Muestra el botón de ajustes
     console.error(err);
   }
 };
@@ -72,6 +76,15 @@ stopBtn.onclick = () => {
   clearInterval(timer);
   status.textContent = 'Grabación guardada';
   recBtn.disabled = false; stopBtn.disabled = true;
+};
+
+// Abre los ajustes de la app
+settingsBtn.onclick = () => {
+  if (Capacitor && Capacitor.Plugins && Capacitor.Plugins.App) {
+      Capacitor.Plugins.App.openAppSettings();
+  } else {
+      alert("Busca la app 'Grabadora' en los ajustes de tu celular y activa el micrófono manualmente.");
+  }
 };
 </script>
 </body>
